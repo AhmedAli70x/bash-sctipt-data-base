@@ -2,7 +2,6 @@
 # echo "a.b.c.txt" | rev | cut -d"." -f2-  | rev
 DELI='ourdb>'
 dbDir=~/'.ourdb'
-USEDDB=''
 #init the server if it is not initialized before
 function init {
 	if ! [ -d $dbDir ];
