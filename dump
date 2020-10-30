@@ -1,46 +1,44 @@
 #!/bin/bash
 # echo "a.b.c.txt" | rev | cut -d"." -f2-  | rev
 
+printf "Your are logged into database engine\nYou can create database, Create table, Insert, Update or delete\n"
+while [ = ]
+do
 function create {
 	case $1 in
 	'database')
-	if [[ -d $2 ]]
+	if [ -d $2 ] && [ $# -eq 2 ]
 	then
 	echo "$2  already exsit"
+	 
 	else
 	mkdir $2
 	printf "\n$2 has been created at home directory\n"
+ 
 	fi
 	;;
-	'table')   #table x in DB
-	if [ $3 = 'in' ]
+	'table')   #table$1 x$2 in$3 DB$4
+	if [  $3 = 'in' ]  && [ $# -eq 4  ] &&  [ -d $4  ] &&  [  ! -f $2   ]
 	then
-	if [ -d $4 ]
-	then 
-	cd $($4)
-	pwd
-	if [[ -f $3 ]]
+	if [[  -f $2 ]]
 	then
-	echo "$3  already exsit"
-	 
-	else
-	
+	echo "\n $4 error 401 table already exist"
+	else 
+	cd $4
 	touch $2
 	printf "\n$2 table has been created in $4\n"
-	fi
+	 fi
 	
 	else
-	echo "\n $4 DB not exist"
-	
+	echo "\n $4 error 401 table already exist or Database not found"
+	 
 	fi	
-	fi
-	
-	
-	
+
 	
 	;;
 	*)
-	printf "\n invalid name $2 {table or database} "
+	printf "\n invalid name $2 {table or database} \n"
+	 
 	;;
 	esac 
 
@@ -48,9 +46,11 @@ function create {
 #echo "$string2"
 #echo "$string3"
  
-printf "Your are logged into database engine\nYou can create database, Create table, Insert, Update or delete\n"
 
-read cmd
+pwd
+ls
+
+read -p 'ourDB> ' cmd
   
 string1="$(cut -d' '  -f1 <<< $cmd)"
 string2="$(cut -d' '  -f2 <<< $cmd)"
@@ -66,9 +66,10 @@ cd ;
 pwd ;
 create  $string2 $string3 $string4 $string5
 else
-echo 'wrong';
+echo 'wrong input';
+ 
 fi
-    
+    done
  
 
 
