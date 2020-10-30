@@ -1,8 +1,16 @@
+------------------------------------------------------------------------------
 welcome to ourdb engine created by Beshoy Nabeih and Ahmed Ated | ITI Students
 commands you can use with help
-show                    > shows all databases
-create [database name]  > creates new database
-drop [database name]    > removes database
-where                   > tells you which database you use
-use [database]          > change operation to specific database
+
+show                      > shows all databases
+
+createdb <database name>  > creates new database
+
+dropdb <database name>    > removes database
+
+use                       > change operation to specific database
+
+where                     > tells you which database you use
+
+
 

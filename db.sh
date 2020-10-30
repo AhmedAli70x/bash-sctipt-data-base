@@ -2,7 +2,6 @@
 # echo "a.b.c.txt" | rev | cut -d"." -f2-  | rev
 DELI='ourdb>'
 dbDir=~/'.ourdb'
-USEDDB=''
 #init the server if it is not initialized before
 function init {
 	if ! [ -d $dbDir ];
@@ -20,48 +19,6 @@ function init {
 #call init function
 init
 
-
-# function create {
-# 	case $1 in
-# 	'database')
-# 	if [[ -d $2 ]];
-# 	then
-# 		echo "$2  already exsit"
-# 	else
-# 		mkdir $2
-# 	printf "\n$2 has been created at home directory\n"
-# 	fi
-# 	;;
-# 	'table')   #table x in DB
-# 	if [ $3 = 'in' ]
-# 	then
-# 	if [ -d $4 ]
-# 	then 
-# 	cd $($4)
-# 	pwd
-# 	if [[ -f $3 ]]
-# 	then
-# 	echo "$3  already exsit"
-	 
-# 	else
-	
-# 	touch $2
-# 	printf "\n$2 table has been created in $4\n"
-# 	fi
-	
-# 	else
-# 	echo "\n $4 DB not exist"
-	
-# 	fi	
-# 	fi
-# 	;;
-# 	*)
-# 	printf "\n invalid name $2 {table or database} "
-# 	;;
-# 	esac 
-
-# }
-
 function createdb {
 	if ! [ -d $dbDir ];then
 		echo 'server error';
@@ -76,6 +33,37 @@ function createdb {
 		echo "database $1 created"
 	else
 		echo 'Error: you can use help command'
+	fi
+}
+#create table
+#columns types (int, text, date)
+#primary key
+
+#createtable tablename ([col1_name col1_type, col2_name col2_type], primary key col_name)
+function createTable {
+	#echo "create data function"
+	#echo $@
+	if [ -d $dbDir ];
+	then
+		if [[ "$PWD" = */.ourdb/* ]]; then
+			#table name
+			if [[ -n $2 ]]; then
+
+				if [[ $2 =~ ^[a-z]+[a-z0-9_]*$ ]];then
+					#check columns
+					echo $3
+				else
+					echo 'Error: table name must start with alphabet and not contains special character'
+				fi
+			
+			else
+				echo 'Error: use help createtable'
+			fi
+		else
+			echo 'use database first : use <database name>'
+		fi
+	else
+		echo 'an error occured'
 	fi
 }
 function dropdb {
@@ -174,15 +162,12 @@ do
 		
 	if [[ $string1 = 'createdb' ]];
 	then
-		# echo "$string1";
-		# cd ;
-		# pwd ;
-		# create  $string2 $string3 $string4 $string5
 		createdb $string2
+	elif [ $string1 = "createtable" ];then
+		createTable ${cmd}
 	elif [ $string1 = 'dropdb' ]; 
 	then 
 		dropdb $string2
-
 	elif [ $string1 = 'show' ];
 	then
 		showdb
