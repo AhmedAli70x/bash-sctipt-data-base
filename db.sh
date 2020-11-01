@@ -2,6 +2,7 @@
 # echo "a.b.c.txt" | rev | cut -d"." -f2-  | rev
 DELI='ourdb>'
 dbDir=~/'.ourdb'
+selectedDB=''
 #init the server if it is not initialized before
 function init {
 	if ! [ -d $dbDir ];
@@ -66,6 +67,85 @@ function createTable {
 		echo 'an error occured'
 	fi
 }
+
+function selecttable {
+	if [ -d $dbDir ];
+	then
+		if [[ -n "$selectedDB" ]]; then
+			if [[ -n $1 && $1 != 'selecttable' ]]; then
+				#check file existance
+				if [ -f  $selectedDB/$1 ]; then
+					#cn -> columns number
+					read cn <<< `sed '1!d' $selectedDB/$1 | cut -d: -f2`
+					let cn++
+					col_arr=()
+					for (( i=2; i < $cn+1; i++ ))
+					do
+						col_arr+=(`sed "${i}!d" $selectedDB/$1` )
+					done
+					sed "1,${cn}d" $selectedDB/$1
+					echo
+					# for value in "${col_arr[@]}"
+					# do
+					# 	echo $value
+					# done
+				else
+					echo "table does not exist"
+				fi
+			else 
+				echo "invalid table name"
+			fi
+		else
+			echo "you should select database first, or use help command"
+		fi	
+	else
+		echo 'an error occured'
+	fi
+}
+#insert table_name
+#col1: >>
+#col2: >>
+function insert {
+	if [[ -n "$selectedDB" ]]; then
+			if [[ -n $1 && $1 != 'insert' ]]; then
+				if [ -f  $selectedDB/$1 ]; then
+					#get columns numbers
+					read cn <<< `sed '1!d' $selectedDB/$1 | cut -d: -f2`
+					let cn++
+					col_arr=()
+					#get columns name and type
+					for (( i=2; i < $cn+1; i++ ))
+					do
+						col_arr+=(`sed "${i}!d" $selectedDB/$1` )
+					done
+					# col_arr[0]
+					# col_arr[1]
+					# col_arr[2]
+					line=""
+					for (( i=0; i < $cn - 1; i++ ))
+					do
+						echo "insert $(cut -d: -f1 <<< ${col_arr[i]})"
+						
+						read f
+						#validation
+						line+=$f
+						if [ $i -lt `expr $cn - 2` ]
+						then
+							line+=:
+						fi				
+					done
+					echo $line >> $selectedDB/$1
+					echo "record inserted"
+				else
+					echo "invalid table name"
+				fi
+			else
+				echo "invalid table name"
+			fi
+	else
+		echo "you should select database first, or use help command"
+	fi
+}
 function dropdb {
 	if [ -n $1 ] && [ -d $dbDir/$1 ];then
 		rm -r $dbDir/$1
@@ -107,13 +187,14 @@ function usedb {
 		# cd $dbDir
 		if [ -n $1 ] && [ -d $dbDir/$1 ];then
 			cd $dbDir/$1
+			selectedDB=$dbDir/$1
 			DELI=$1">"
 			echo $1' now in used'
 		else
-			echo 'database '$1' does not exists';
+			echo "database $1 does not exists"
 		fi
 	else
-		echo 'Server not initialized...'
+		echo "Server not initialized..."
 		#init
 	fi
 }
@@ -180,16 +261,21 @@ do
 		whereme
 	elif [ $string1 = 'showtables' ];then
 		showtables
-
+	elif [ $string1 = 'select' ];then
+		selecttable $string2 
+	elif [ $string1 = 'insert' ];then
+		insert $string2 
 	elif [ $string1 = 'clear' ]; then
 		clear
 	elif [ $string1 = 'help' ]; then
-		cat $dbDir/.help.txt
-	elif [ $string1 = 'exit' ]; then
-		break
+		echo
+		cat $dbDir"/.help.txt"
+	elif [[ $string1 = "exit" ]]
+	then
+		echo "good bay";
+		exit
 	else
-		echo 'invalid command';
-		cat $dbDir/.help.txt
+		echo 'invalid command'
+		#cat $dbDir/.help.txt
 	fi
 done
-echo "good bay"
