@@ -62,8 +62,6 @@ function createTable {
 					read -e cols_num
 					
 					if [[ $cols_num =~ ^[0-9]$ ]]; then
-						
-
 						echo -e "\e[1;33m Pay attention \e[0m Column Syntax <column_name>:null(y) or not null(n):<Column_type>"
 						echo -e "\e[1;32m types \e[0m int, text, date"
 						cols_str=()
@@ -72,7 +70,7 @@ function createTable {
 							while [ true ]; do
 								read -e -p "Column $((i+1)): " col
 								#check for column systax
-								if [[ $col =~ ^[a-z]+:(n|N|y|Y):(int|text|date)$ ]]; then
+								if [[ $col =~ ^[a-zA-Z_]+:(n|N|y|Y):(int|text|date)$ ]]; then
 									#check for column name
 									if [[ `cut -d: -f1 <<< $col` =~ ^(int|text|date)$ ]]; then
 										echo -e "\e[;31m invalid column name \e[0m" 
@@ -86,11 +84,14 @@ function createTable {
 								fi
 							done
 						done
+						#check if all columns entered in cols_str
 						if [ $i -eq $cols_num ];then
+							#write cols_number into table file 
 							echo cols:$cols_num >> $2
+							#write cols into table file
 							for x in "${cols_str[@]}"
 							do
-								echo $x >> $2								
+								echo $x >> $2
 							done
 							echo -e "\e[1;32m Table Created.. \e[0m"
 						else
@@ -115,11 +116,19 @@ function createTable {
 	fi
 }
 
-#create table
-
 #update record
+#update table_name col_name=value
+#echo record
+#if value is empty store the old value
+#insert id=...
+#name id=...
+#birthdate id=...
+#score id=...
+#updated successfully
+
 #delete record
-#search for patter in table
+#delete table_name  ->> remove all records
+#delete table_name col_name=value ->>  
 
 function selecttable {
 	if [ -d $dbDir ];
@@ -128,23 +137,24 @@ function selecttable {
 			if [[ -n $1 && $1 != 'selecttable' ]]; then
 				#check file existance
 				if [ -f  $selectedDB/$1 ]; then
-					#cn -> columns number
-					read cn <<< `sed '1!d' $selectedDB/$1 | cut -d: -f2`
-					let cn++
-					col_arr=()
-					for (( i=2; i < $cn+1; i++ ))
-					do
-						col_arr+=(`sed "${i}!d" $selectedDB/$1` )
-					done
-					if [ $(wc -l $selectedDB/$1 | cut -d ' ' -f1) -le $cn ]; then
-						echo "Nothing to show" 
+					if [[ -n $2 ]]; then
+						sed -n "/$2/p" $selectedDB/$1
+					else
+						#cn -> columns number
+						read cn <<< `sed '1!d' $selectedDB/$1 | cut -d: -f2`
+						let cn++
+						
+						col_arr=()
+						for (( i=2; i < $cn+1; i++ ))
+						do
+							col_arr+=(`sed "${i}!d" $selectedDB/$1` )
+						done
+						if [ $(wc -l $selectedDB/$1 | cut -d ' ' -f1) -le $cn ]; then
+							echo "Nothing to show" 
+						fi
+						sed "1,${cn}d" $selectedDB/$1
+						echo
 					fi
-					sed "1,${cn}d" $selectedDB/$1
-					echo
-					# for value in "${col_arr[@]}"
-					# do
-					# 	echo $value
-					# done
 				else
 					echo "table does not exist"
 				fi
@@ -163,9 +173,12 @@ function selecttable {
 #col2: >>
 function checkPrimaryKey {
 	#$1 -> table
-	#$2 -> field
-	#$3 -> value
-	echo primary_key
+	#$2 -> fields count
+	#$3 -> field
+	#$4 -> value
+	#echo primary_key
+	tmp1=$(sed "1,$2d"  $1 | cut -d: -f$3 | grep -w $4)
+
 }
 function insert {
 	if [[ -n "$selectedDB" ]]; then
@@ -194,12 +207,11 @@ function insert {
 						
 						read -e f
 						#check for primary key in first column
-						
+
 						if [ $i -eq 0 ]; then
 							tmp1=$(sed "1,${cn}d"  $selectedDB/$1 | cut -d: -f1 | grep -w $f)
-
 							if [[ $tmp1 =~ ^[0-9]+$ ]];then
-								echo -e "\e[1;31m Duplicate value: \e[0m $f value exists in column $col_name"
+								echo -e "\e[1;31m Duplicated value: \e[0m $f value exists in column $col_name"
 								let i--;
 								continue
 							fi
@@ -242,14 +254,14 @@ function insert {
 								;;
 							date)
 								if [ col_null == 'n' ]; then
-									if [[ $f =~ ^[0|1]*[0-9]{1}-[0|1]*[0-9]{1}-[0-9]{4}$ ]]; then
+									if [[ $f =~ ^[0-3]?[0-9]{1}-[0|1]?[0-9]{1}-[0-9]{4}$ ]]; then
 										line+=$f
 									else
 										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
 										let i--
 									fi
 								else
-									if [[ -z $f ]] || [[ $f =~ ^[0|1]*[0-9]{1}-[0|1]*[0-9]{1}-[0-9]{4}$ ]]; then
+									if [[ -z $f ]] || [[ $f =~ ^[0-3]?[0-9]{1}-[0|1]?[0-9]{1}-[0-9]{4}$ ]]; then
 										line+=$f
 									else
 										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
@@ -400,7 +412,11 @@ do
 	elif [ $string1 = 'showtables' ];then
 		showtables
 	elif [ $string1 = 'select' ];then
-		selecttable $string2 
+		#if [ -n $string3 ]; then
+			selecttable $string2 $string3
+		#else
+		#	selecttable $string2 
+		#fi
 	elif [ $string1 = 'insert' ];then
 		insert $string2 
 	elif [ $string1 = 'clear' ]; then
