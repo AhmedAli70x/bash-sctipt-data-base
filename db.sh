@@ -51,8 +51,55 @@ function createTable {
 			if [[ -n $2 ]]; then
 
 				if [[ $2 =~ ^[a-z]+[a-z0-9_]*$ ]];then
+					#check if table exists
+					if [ -f $2 ]; then
+						echo -e "\e[1;31m Error: \e[0m Table $2 exists"
+					else
 					#check columns
-					echo $3
+					#echo $2
+
+					echo "Please, Enter Columns Number"
+					read -e cols_num
+					
+					if [[ $cols_num =~ ^[0-9]$ ]]; then
+						
+
+						echo -e "\e[1;33m Pay attention \e[0m Column Syntax <column_name>:null(y) or not null(n):<Column_type>"
+						echo -e "\e[1;32m types \e[0m int, text, date"
+						cols_str=()
+						for (( i = 0; i< $cols_num; i++ ))
+						do
+							while [ true ]; do
+								read -e -p "Column $((i+1)): " col
+								#check for column systax
+								if [[ $col =~ ^[a-z]+:(n|N|y|Y):(int|text|date)$ ]]; then
+									#check for column name
+									if [[ `cut -d: -f1 <<< $col` =~ ^(int|text|date)$ ]]; then
+										echo -e "\e[;31m invalid column name \e[0m" 
+										continue
+									fi				
+									cols_str+=($col)
+									break
+								else
+									echo -e "\e[1;31m Error: \e[0m Invalid column systax"
+									continue
+								fi
+							done
+						done
+						if [ $i -eq $cols_num ];then
+							echo cols:$cols_num >> $2
+							for x in "${cols_str[@]}"
+							do
+								echo $x >> $2								
+							done
+							echo -e "\e[1;32m Table Created.. \e[0m"
+						else
+							echo "operation aborted..."
+						fi
+					else
+						echo -e "\e[1;31m Error: \e[0m Invalid columns number"
+					fi
+				fi
 				else
 					echo 'Error: table name must start with alphabet and not contains special character'
 				fi
@@ -67,6 +114,12 @@ function createTable {
 		echo 'an error occured'
 	fi
 }
+
+#create table
+
+#update record
+#delete record
+#search for patter in table
 
 function selecttable {
 	if [ -d $dbDir ];
@@ -83,6 +136,9 @@ function selecttable {
 					do
 						col_arr+=(`sed "${i}!d" $selectedDB/$1` )
 					done
+					if [ $(wc -l $selectedDB/$1 | cut -d ' ' -f1) -le $cn ]; then
+						echo "Nothing to show" 
+					fi
 					sed "1,${cn}d" $selectedDB/$1
 					echo
 					# for value in "${col_arr[@]}"
@@ -105,6 +161,12 @@ function selecttable {
 #insert table_name
 #col1: >>
 #col2: >>
+function checkPrimaryKey {
+	#$1 -> table
+	#$2 -> field
+	#$3 -> value
+	echo primary_key
+}
 function insert {
 	if [[ -n "$selectedDB" ]]; then
 			if [[ -n $1 && $1 != 'insert' ]]; then
@@ -124,15 +186,91 @@ function insert {
 					line=""
 					for (( i=0; i < $cn - 1; i++ ))
 					do
-						echo "insert $(cut -d: -f1 <<< ${col_arr[i]})"
+						col_name=$(cut -d: -f1 <<< ${col_arr[i]})
+						col_null=$(cut -d: -f2 <<< ${col_arr[i]})
+						col_type=$(cut -d: -f3 <<< ${col_arr[i]})
+						tmp=$i
+						echo "insert $col_name:"
 						
-						read f
+						read -e f
+						#check for primary key in first column
+						
+						if [ $i -eq 0 ]; then
+							tmp1=$(sed "1,${cn}d"  $selectedDB/$1 | cut -d: -f1 | grep -w $f)
+
+							if [[ $tmp1 =~ ^[0-9]+$ ]];then
+								echo -e "\e[1;31m Duplicate value: \e[0m $f value exists in column $col_name"
+								let i--;
+								continue
+							fi
+						fi
+						case $col_type in 
+							int)
+								if [ col_null == 'n' ]; then
+									if [[ $f =~ ^[0-9]+$ ]]; then
+											line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								else
+									if [[ $f =~ ^[0-9]*$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								fi
+								;;
+							text)
+								if [ col_null == 'n' ]; then
+									if [[ "$f" =~ ^[a-z0-9[:space:]]+$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								else
+									if [[ "$f" =~ ^[a-z0-9[:space:]]*$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								fi
+								
+								;;
+							date)
+								if [ col_null == 'n' ]; then
+									if [[ $f =~ ^[0|1]*[0-9]{1}-[0|1]*[0-9]{1}-[0-9]{4}$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								else
+									if [[ -z $f ]] || [[ $f =~ ^[0|1]*[0-9]{1}-[0|1]*[0-9]{1}-[0-9]{4}$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								fi
+								;;
+							*)
+								echo "server error"
+							;;
+						esac
+						
 						#validation
-						line+=$f
-						if [ $i -lt `expr $cn - 2` ]
-						then
-							line+=:
-						fi				
+						if [ $tmp == $i ]; then
+							if [ $i -lt `expr $cn - 2` ]
+							then
+								line+=:
+							fi
+						fi
+						
+
 					done
 					echo $line >> $selectedDB/$1
 					echo "record inserted"
@@ -232,7 +370,7 @@ printf "Your are logged into database engine\nYou can create database, Create ta
 while [  true ];
 do
 	
-	read -p $DELI cmd
+	read -p $DELI -e cmd
 
 	string1="$(cut -d' '  -f1 <<< $cmd)"
 	string2="$(cut -d' '  -f2 <<< $cmd)"
