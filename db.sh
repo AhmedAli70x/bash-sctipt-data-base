@@ -130,6 +130,72 @@ function createTable {
 #delete table_name  ->> remove all records
 #delete table_name col_name=value ->>  
 
+function update {
+ 
+	if [ -d $dbDir ];
+	then		
+		if [[ "$PWD" = */.ourdb/* ]];then
+			if [ -f $dbDir/*/$1 ]; then
+				col="$(cut -d= -f1	<<< $2)"
+				val="$(cut -d= -f2	<<< $2)"
+				check=0
+				check2=0
+				count=0
+				read cn <<< `sed '1!d' $1 | cut -d: -f2`
+				# echo $cn
+				for (( i=2 ; i <= $cn+1 ; i++ ))
+				do 
+				
+				 read col_tmp <<< $(sed "${i}!d"  $1 | cut -d: -f1)
+			 	 if [[ $col = $col_tmp ]] 
+				 then
+				 check=1
+				 echo "I am checked"
+				 let count=$i-1
+					break;
+				 
+				 fi
+				done
+
+				end=0
+				end=$(wc -l $1 | cut -d ' ' -f1) 
+				 
+				   
+				for (( i=$cn+2 ; i <= $end ; i++ ))
+				do 
+				
+				 read val_tmp <<< $(sed "${i}!d"  $1 | cut -d: -f$count)
+			 	 if [[ $val = $val_tmp ]] 
+				 then
+				 check2=1
+				 echo "I am checked second"
+				 let count2=$i
+					break;
+				 
+				 fi
+				done
+
+ 				sed "${count2}!d"  $1 
+		  		echo "Please enter the values "
+				  for (( i=1; i<= $cn; i++))
+				  do
+				  read -p "New col ${i}> " field1 >> $(sed "${count2}!d"  $1 | cut -d: -f$i)
+
+
+				done
+				#  
+				fi
+				#  echo $col_tmp
+				#  echo $count
+				
+		else
+			echo 'you should select database first';
+		fi
+	else
+		echo 'an error occured'
+	fi
+
+}
 function selecttable {
 	if [ -d $dbDir ];
 	then
@@ -419,6 +485,8 @@ do
 		#fi
 	elif [ $string1 = 'insert' ];then
 		insert $string2 
+	elif [ $string1 = 'update' ];then
+	update $string2  $string3 
 	elif [ $string1 = 'clear' ]; then
 		clear
 	elif [ $string1 = 'help' ]; then
