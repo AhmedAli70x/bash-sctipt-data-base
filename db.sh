@@ -130,6 +130,78 @@ function createTable {
 #delete table_name  ->> remove all records
 #delete table_name col_name=value ->>  
 
+function delete {
+	if [ -d $dbDir ]; then
+		#check command syntax
+		if  [[ -n $1  &&  -n $2  &&  $1 != "delete"  && $2 =~ ^[a-z0-9_]+=[a-z0-9_]+$ ]];
+		then
+			#check using use command first
+			if [[ "$PWD" = */.ourdb/* ]];then
+				#check for table existance
+				if [ -f $dbDir/*/$1 ]; then
+					col="$(cut -d= -f1	<<< $2)"
+					val="$(cut -d= -f2	<<< $2)"
+					read cn <<< `sed '1!d' $1 | cut -d: -f2`
+					# get table meta data (column name, column null or no, column type)
+					for (( i=2 ; i <= $cn+1 ; i++ ))
+					do
+						col_arr+=(`sed "${i}!d" $selectedDB/$1` )
+					done
+					#check for col existance and get it is line number 
+					#use it for determine which column to delete from
+					for (( i=0; i < $cn; i++ ))
+					do
+						if [[ $col == `cut -d: -f1 <<< ${col_arr[i]}` ]];
+						then
+							col_num=$(( $i+1 ))
+							break
+						fi
+					done
+
+					#check for column existance
+					if [ $col_num -gt 0 ];
+					then
+						let cn++
+						#check for value existance and get it record number(record num with meta data lines)
+						tmp=(`sed "1,${cn}d" $selectedDB/$1 | cut -d: -f$col_num | grep -xn "$val" | cut -d: -f1`)
+						#check length of founded records
+						# echo ${tmp[@]}
+						# exit
+						if [ ${#tmp[@]}  -gt 0 ];
+						then
+							#sed '${tmp[0]}d;${}'
+							#loop for records
+							tmp_2=""
+							for (( i=0; i<${#tmp[@]}; i++ ))
+							do
+								tmp_2+=$((tmp[i]+cn))'d;'
+							done
+							sed -i "$tmp_2" $selectedDB/$1
+							# tmp_file=`sed "$tmp_2" $selectedDB/$1`
+							# echo $tmp_file > $selectedDB/$1
+							echo -e "\e[1;32m ${#tmp[@]} Record(s) deleted \e[0m"
+							
+							#exit
+						else
+							echo "record $col does not exist"
+						fi
+					else
+						echo "Column name not found"
+					fi					
+				else
+					echo "Table does not exist"
+				fi
+			else
+				echo "You use select database first, command use <database_name>"
+			fi
+		else
+			echo "command Error, use help command"
+		fi
+	else
+		echo "Server Error"
+	fi
+}
+
 function update {
  
 	if [ -d $dbDir ];
@@ -455,8 +527,11 @@ do
 	string3="$(cut -d' '  -f3 <<< $cmd)"
 	string4="$(cut -d' '  -f4 <<< $cmd)"
 	string5="$(cut -d' '  -f5 <<< $cmd)"
-
-		
+	
+	if [[ -z $cmd ]];
+	then
+		continue
+	fi
 	if [[ $string1 = 'createdb' ]];
 	then
 		createdb $string2
@@ -483,6 +558,8 @@ do
 		#else
 		#	selecttable $string2 
 		#fi
+	elif [ $string1 = 'delete' ];then
+		delete $string2 $string3
 	elif [ $string1 = 'insert' ];then
 		insert $string2 
 	elif [ $string1 = 'update' ];then
