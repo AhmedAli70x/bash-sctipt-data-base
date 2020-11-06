@@ -142,18 +142,18 @@ function update {
 				check2=0
 				count=0
 				read cn <<< `sed '1!d' $1 | cut -d: -f2`
+				let cn++
 				# echo $cn
-				for (( i=2 ; i <= $cn+1 ; i++ ))
+				for (( i=2 ; i <= $cn ; i++ ))
 				do 
 				
 				 read col_tmp <<< $(sed "${i}!d"  $1 | cut -d: -f1)
 			 	 if [[ $col = $col_tmp ]] 
 				 then
 				 check=1
-				 echo "I am checked"
+				
 				 let count=$i-1
 					break;
-				 
 				 fi
 				done
 
@@ -161,33 +161,139 @@ function update {
 				end=$(wc -l $1 | cut -d ' ' -f1) 
 				 
 				   
-				for (( i=$cn+2 ; i <= $end ; i++ ))
+				for (( i=$cn+1 ; i <= $end ; i++ ))
 				do 
 				
 				 read val_tmp <<< $(sed "${i}!d"  $1 | cut -d: -f$count)
 			 	 if [[ $val = $val_tmp ]] 
 				 then
 				 check2=1
-				 echo "I am checked second"
+				 
 				 let count2=$i
 					break;
 				 
 				 fi
 				done
-
- 				sed "${count2}!d"  $1 
-		  		echo "Please enter the values "
-				  for (( i=1; i<= $cn; i++))
-				  do
-				  read -p "New col ${i}> " field1 >> $(sed "${count2}!d"  $1 | cut -d: -f$i)
-
-
-				done
-				#  
-				fi
-				#  echo $col_tmp
-				#  echo $count
+				#begin edit process if the col_name and col value is already exist
+				if [[ $check -eq 1 && $check2 -eq 1 ]]
+				then
+				#  echo "I am checked"
+				# echo "I am checked second"
 				
+				
+ 				#  sed "${count2}d"  $1 
+				 tmpfile=`sed "${count2}d"  $1` 
+				#  echo "$tmpfile"
+		  		# echo "Please enter the values "
+				
+				# 
+				col_arr=()
+					#get columns name and type
+					for (( i=2; i < $cn+1; i++ ))
+					do
+						col_arr+=(`sed "${i}!d" $selectedDB/$1` )
+					done
+						line=""
+					for (( i=0; i < $cn - 1; i++ ))
+					do
+						col_name=$(cut -d: -f1 <<< ${col_arr[i]})
+						col_null=$(cut -d: -f2 <<< ${col_arr[i]})
+						col_type=$(cut -d: -f3 <<< ${col_arr[i]})
+						tmp=$i
+						echo "update $col_name:"
+						
+						read -e f
+						#check for primary key in first column
+
+						if [ $i -eq 0 ]; then
+							tmp1=$(sed "1,${cn}d"  $selectedDB/$1 | cut -d: -f1 | grep -w $f)
+							if [[ $tmp1 =~ ^[0-9]+$ ]];then
+								echo -e "\e[1;31m Duplicated value: \e[0m $f value exists in column $col_name"
+								let i--;
+								continue
+							fi
+						fi
+						case $col_type in 
+							int)
+								if [ col_null == 'n' ]; then
+									if [[ $f =~ ^[0-9]+$ ]]; then
+											line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								else
+									if [[ $f =~ ^[0-9]*$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								fi
+								;;
+							text)
+								if [ col_null == 'n' ]; then
+									if [[ "$f" =~ ^[a-z0-9[:space:]]+$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								else
+									if [[ "$f" =~ ^[a-z0-9[:space:]]*$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								fi
+								
+								;;
+							date)
+								if [ col_null == 'n' ]; then
+									if [[ $f =~ ^[0-3]?[0-9]{1}-[0|1]?[0-9]{1}-[0-9]{4}$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								else
+									if [[ -z $f ]] || [[ $f =~ ^[0-3]?[0-9]{1}-[0|1]?[0-9]{1}-[0-9]{4}$ ]]; then
+										line+=$f
+									else
+										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
+										let i--
+									fi
+								fi
+								;;
+							*)
+								echo "server error"
+							;;
+						esac
+						
+						#validation
+						if [ $tmp == $i ]; then
+							if [ $i -lt `expr $cn - 2` ]
+							then
+								line+=:
+							fi
+						fi
+						
+
+					done
+					echo "$tmpfile" > $selectedDB/$1
+					echo "$line" >> $selectedDB/$1
+					
+
+					# else
+					# echo "col-name or col-value nt exist"
+					fi
+
+				else 
+				echo "Table name not exist"
+			fi
+			#  echo $col_tmp
+			#  echo $count
 		else
 			echo 'you should select database first';
 		fi
