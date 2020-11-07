@@ -10,9 +10,9 @@ function init {
 		mkdir $dbDir;
 		cp ./help.txt ${dbDir}/.help.txt
 		if [ $? = 0 ]; then
-			echo "database server initialized create";
+			echo -e "\e[ database server initialized create"
 		else
-			echo 'error initializing the database server';
+			echo -e "\e[1;31;m error initializing the database server \e[0m"
 			exit
 		fi
 	fi
