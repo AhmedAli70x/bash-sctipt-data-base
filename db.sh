@@ -22,18 +22,18 @@ init
 
 function createdb {
 	if ! [ -d $dbDir ];then
-		echo 'server error';
+		echo -e "\e[1;31m server error \e[0m"
 	elif [[ $1 = "createdb" ]];then
-		echo 'Error: you can use help command'
+		echo -e "\e[1;31m Error: you can use help command \e[0m"
 	elif [ -n $1 ] && [ -d $dbDir/$1 ];then
-		echo $1" database aleady exists"
+		echo -e $1" \e[1;33m database aleady exists \e[0m"
 	elif ! [[ $1 =~ ^[a-z]+[a-z0-9]*$ ]];then
-		echo 'invalid database name, you can only use alphabet and number and start with character'
+		echo -e "\e[1;31m invalid database name, you can only use alphabet and number and start with character \e[0m"
 	elif [ -d $dbDir ] && [ -n $1 ] ; then
 		mkdir $dbDir/$1
-		echo "database $1 created"
+		echo -e "\e[1;32m database $1 created \e[0m"
 	else
-		echo 'Error: you can use help command'
+		echo -e "\e[1;31m Error: you can use help command \e[0m"
 	fi
 }
 #create table
@@ -79,7 +79,7 @@ function createTable {
 									cols_str+=($col)
 									break
 								else
-									echo -e "\e[1;31m Error: \e[0m Invalid column systax"
+									echo -e "\e[1;31m Error: Invalid column systax \e[0m"
 									continue
 								fi
 							done
@@ -98,38 +98,23 @@ function createTable {
 							echo "operation aborted..."
 						fi
 					else
-						echo -e "\e[1;31m Error: \e[0m Invalid columns number"
+						echo -e "\e[1;31m Error: Invalid columns number \e[0m"
 					fi
 				fi
 				else
-					echo 'Error: table name must start with alphabet and not contains special character'
+					echo-e "\e[1;31m Error: table name must start with alphabet and not contains special character \e[0m"
 				fi
 			
 			else
-				echo 'Error: use help createtable'
+				echo -e "\e[1;31m Error: use help createtable \e[0m"
 			fi
 		else
-			echo 'use database first : use <database name>'
+			echo -e "\e[1;31m use database first : use <database name> \e[0m"
 		fi
 	else
-		echo 'an error occured'
+		echo -e "\e[1;31m an error occured \e[0m"
 	fi
 }
-
-#update record
-#update table_name col_name=value
-#echo record
-#if value is empty store the old value
-#insert id=...
-#name id=...
-#birthdate id=...
-#score id=...
-#updated successfully
-
-#delete record
-#delete table_name  ->> remove all records
-#delete table_name col_name=value ->>  
-
 function delete {
 	if [ -d $dbDir ]; then
 		#check command syntax
@@ -183,22 +168,22 @@ function delete {
 							
 							#exit
 						else
-							echo "record $col does not exist"
+							echo -e "\e[1;31m record $col does not exist \e[0m"
 						fi
 					else
-						echo "Column name not found"
+						echo -e "\e[1;31m Column name not found \e[0m"
 					fi					
 				else
-					echo "Table does not exist"
+					echo -e "\e[1;31m Table does not exist \e[0m"
 				fi
 			else
-				echo "You use select database first, command use <database_name>"
+				echo -e "\e[1;31m You use select database first, command use <database_name> \e[0m"
 			fi
 		else
-			echo "command Error, use help command"
+			echo -e "\e[1;31m command Error, use help command \e[0m"
 		fi
 	else
-		echo "Server Error"
+		echo -e "\e[1;31m Server Error \e[0m"
 	fi
 }
 
@@ -339,7 +324,7 @@ function update {
 								fi
 								;;
 							*)
-								echo "server error"
+								echo -e "\e[1;31m server error \e[0m"
 							;;
 						esac
 						
@@ -362,15 +347,15 @@ function update {
 					fi
 
 				else 
-				echo "Table name not exist"
+				echo -e "\e[1;31m Table name not exist \e[0m"
 			fi
 			#  echo $col_tmp
 			#  echo $count
 		else
-			echo 'you should select database first';
+			echo -e "\e[1;31m you should select database first \e[0m"
 		fi
 	else
-		echo 'an error occured'
+		echo -e "\e[1;31m an error occured \e[0m"
 	fi
 
 }
@@ -394,36 +379,35 @@ function selecttable {
 							col_arr+=(`sed "${i}!d" $selectedDB/$1` )
 						done
 						if [ $(wc -l $selectedDB/$1 | cut -d ' ' -f1) -le $cn ]; then
-							echo "Nothing to show" 
+							echo -e "\e[1;31mNothing to show \e[0m" 
+						else
+							for (( i=0; i < $cn - 1; i++ ))
+							do
+								col_name=$(cut -d: -f1 <<< ${col_arr[i]})
+								col_null=$(cut -d: -f2 <<< ${col_arr[i]})
+								col_type=$(cut -d: -f3 <<< ${col_arr[i]})
+								printf "$col_name\t\t"
+							done
+							printf "\n======================================\n"	
+							sed "1,${cn}d; s/:/\t\t/g" $selectedDB/$1
+							# awk 'BEGIN {}' $selectedDB/$1
+							echo
 						fi
-						sed "1,${cn}d" $selectedDB/$1
-						echo
 					fi
 				else
-					echo "table does not exist"
+					echo -e "\e[1;31m table does not exist \e[0m"
 				fi
 			else 
-				echo "invalid table name"
+				echo -e "\e[1;31m invalid table name \e[0m"
 			fi
 		else
-			echo "you should select database first, or use help command"
+			echo -e "\e[1;31m you should select database first, or use help command \e[0m"
 		fi	
 	else
-		echo 'an error occured'
+		echo -e "\e[1;31man error occured \e[0m"
 	fi
 }
 #insert table_name
-#col1: >>
-#col2: >>
-function checkPrimaryKey {
-	#$1 -> table
-	#$2 -> fields count
-	#$3 -> field
-	#$4 -> value
-	#echo primary_key
-	tmp1=$(sed "1,$2d"  $1 | cut -d: -f$3 | grep -w $4)
-
-}
 function insert {
 	if [[ -n "$selectedDB" ]]; then
 			if [[ -n $1 && $1 != 'insert' ]]; then
@@ -447,8 +431,11 @@ function insert {
 						col_null=$(cut -d: -f2 <<< ${col_arr[i]})
 						col_type=$(cut -d: -f3 <<< ${col_arr[i]})
 						tmp=$i
-						echo "insert $col_name:"
-						
+						if [[ $col_type == "date" ]];then
+							echo "insert $col_name (dd-mm-yyyy):"
+						else
+							echo "insert $col_name:"
+						fi
 						read -e f
 						#check for primary key in first column
 
@@ -480,14 +467,14 @@ function insert {
 								;;
 							text)
 								if [ col_null == 'n' ]; then
-									if [[ "$f" =~ ^[a-z0-9[:space:]]+$ ]]; then
+									if [[ "$f" =~ ^[a-zA-Z0-9[:space:]]+$ ]]; then
 										line+=$f
 									else
 										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
 										let i--
 									fi
 								else
-									if [[ "$f" =~ ^[a-z0-9[:space:]]*$ ]]; then
+									if [[ "$f" =~ ^[a-zA-Z0-9[:space:]]*$ ]]; then
 										line+=$f
 									else
 										echo -e "\e[1;31m TypeError: \e[0m invalid type for $col_name"
@@ -529,23 +516,23 @@ function insert {
 
 					done
 					echo $line >> $selectedDB/$1
-					echo "record inserted"
+					echo -e "\e[1;32m record inserted \e[0m"
 				else
-					echo "invalid table name"
+					echo -e "\e[1;31m invalid table name \e[0m"
 				fi
 			else
-				echo "invalid table name"
+				echo -e "\e[1;31m invalid table name \e[0m"
 			fi
 	else
-		echo "you should select database first, or use help command"
+		echo -e "\e[1;31m syou should select database first, or use help command \e[0m"
 	fi
 }
 function dropdb {
 	if [ -n $1 ] && [ -d $dbDir/$1 ];then
 		rm -r $dbDir/$1
-		echo $1" has been deleted successfully"
+		echo -e "\e[1;32m $1 has been deleted successfully \e[0m"
 	else
-		echo 'database '$1' not exists. you can use help command'
+		echo -e "\e[1;31m database $1 not exists. you can use help command \e[0m"
 	fi
 }
 function showdb {
@@ -553,7 +540,7 @@ function showdb {
 	then
 		ls $dbDir
 	else
-		echo 'an error occured'
+		echo -e "\e[1;31m an error occured \e[0m"
 	fi
 }
 
@@ -563,15 +550,15 @@ function droptable {
 		if [[ "$PWD" = */.ourdb/* ]];then
 			if [ -f $dbDir/*/$1 ]; then
 				rm $1
-				echo 'table '$1' deleted'
+				echo -e "\e[1;32m table $1 deleted \e[0m"
 			else
-				echo 'table '$1' does not exists'
+				echo -e "\e[1;31m table $1 does not exists \e[0m"
 			fi
 		else
-			echo 'you should select database first';
+			echo -e "\e[1;31m you should select database first \e[0m"
 		fi
 	else
-		echo 'an error occured'
+		echo -e "\e[1;31m an error occured \e[0m"
 	fi
 }
 
@@ -583,12 +570,12 @@ function usedb {
 			cd $dbDir/$1
 			selectedDB=$dbDir/$1
 			DELI=$1">"
-			echo $1' now in used'
+			echo -e "\e[1;32m $1 now in used \e[0m"
 		else
-			echo "database $1 does not exists"
+			echo -e "\e[1;31m database $1 does not exists \e[0m"
 		fi
 	else
-		echo "Server not initialized..."
+		echo -e "\e[1;31m Server not initialized... \e[0m"
 		#init
 	fi
 }
@@ -597,15 +584,15 @@ function showtables {
 	then
 		if [[ "$PWD" = */.ourdb/* ]]; then
 			if [ $( ls | wc -l ) = 0 ];then
-				echo 'no tables to show'
+				echo -e "\e[1;31m no tables to show \e[0m" 
 			else
 				ls
 			fi
 		else
-			echo 'use database first : use <database name>'
+			echo -e "\e[1;31m use database first: use <database name> \e[0m"
 		fi
 	else
-		echo 'an error occured'
+		echo -e "\e[1;31m an error occured \e[0m"
 	fi
 }
 function whereme {
@@ -614,14 +601,14 @@ function whereme {
 		if [[ "$PWD" = */.ourdb/* ]]; then
 			awk -F/ '{print $NF}' <<< $(pwd)
 		else
-			echo 'use database first : use <database name>'
+			echo -e "\e[1;31muse database first : use <database name> \e[0m"
 		fi
 	else
-		echo 'an error occured'
+		echo -e "\e[1;31man error occured \e[0m"
 	fi
 }
 
-printf "Your are logged into database engine\nYou can create database, Create table, Insert, Update or delete\n"
+echo -e "\e[1;32mYou are logged into database engine\nYou can create database, Create table, Insert, Update or delete\n \e[0m"
 
 while [  true ];
 do
@@ -680,7 +667,7 @@ do
 		echo "good bay";
 		exit
 	else
-		echo 'invalid command'
+		echo -e "\e[1;31m invalid command \e[0m"
 		#cat $dbDir/.help.txt
 	fi
 done

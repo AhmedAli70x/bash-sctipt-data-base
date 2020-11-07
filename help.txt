@@ -7,29 +7,33 @@ show                      > shows all databases
 
 createdb <database name>  > creates new database
 
+use  	<database name>   > change operation to specific database
+
 createtable
 	enter colum_number
 		colum_name: y=>(null) or  n=>(not null):int or text or date	   
 
 dropdb <database name>    > removes database
 
-droptb <table_name>	   > remove table
-
-use  	<database name>   > change operation to specific database
+droptb <table_name>	      > remove table
 
 where                     > tells you which database you use
 
-show			   > view all databases
+showtables		          > view tables in current database
 
-showtables		   > view tables in current database
+select	<table name>	  >list table data
 
-select	<table name>	   >list table data
+insert <table name> 
+		<colum_name>:y=>null or n(not_null):(int or text or data)
+	example: insert students
+		insert id:
+			1
+		insert name:
+			ahmed
 
-insert <table name> colum_name:y=>null or n(not_null):(int or text or data)
+update <table name>  <colum_name>=<new_value>
 
-update <table name>  colum_name=new_value
-
-delete <table name>   colum_name=value
+delete <table name>   <colum_name>=<value>
 
 help			   >command menu
 
